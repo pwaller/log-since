@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -11,6 +12,8 @@ import (
 	"strings"
 	"time"
 )
+
+var age = flag.Duration("age", time.Hour, "Time to search backwards")
 
 func check(err error) {
 	if err != nil {
@@ -111,12 +114,21 @@ func ParseNginxTime(l string) time.Time {
 }
 
 func main() {
-	fd, err := os.Open(os.Args[1])
+	flag.Parse()
+
+	args := flag.Args()
+
+	if len(args) != 1 {
+		flag.Usage()
+		return
+	}
+
+	fd, err := os.Open(args[0])
 	check(err)
 	defer fd.Close()
 
-	twoHoursAgo := time.Now().Add(-2 * time.Hour)
-	SearchFile(fd, twoHoursAgo)
+	oldestToFind := time.Now().Add(-*age)
+	SearchFile(fd, oldestToFind)
 
 	lineReader := bufio.NewScanner(fd)
 	for lineReader.Scan() {
